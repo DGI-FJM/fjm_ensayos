@@ -1,0 +1,6 @@
+name = FJM Ensayos Extensions
+dependencies[] = fedora_repository
+description = Extensions of FJM's Ensayos PDF collection.
+package = Islandora
+version = 6.x-dev
+core = 6.x

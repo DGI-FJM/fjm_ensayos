@@ -1,0 +1,39 @@
+<?php
+
+function fjm_ensayos_render_qdc($pid) {
+  global $base_url;
+  $path = drupal_get_path('module', 'fedora_repository');
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  
+  $item =  new Fedora_Item($pid);
+  $dsid = array_key_exists('QDC', $item->get_datastreams_list_as_array()) ? 'QDC' : 'DC';
+  $xmlstr = $item->get_datastream_dissemination($dsid);
+  
+  
+  if (empty($xmlstr)) {
+    return '';
+  }
+  
+  try {
+    $proc = new XsltProcessor();
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+    return;
+  }
+  
+  $proc->setParameter('', 'baseUrl', $base_url);
+  $proc->setParameter('', 'path', $base_url . '/' . $path);
+  $input = NULL;
+  $xsl = new DomDocument();
+  try {
+    $xsl->load(drupal_get_path('module', 'fjm_ensayos') . '/xsl/qdc_to_html.xsl');
+    $input = new DomDocument();
+    $input->loadXML(trim($xmlstr));
+  } catch (exception $e) {
+    watchdog(t("Fedora_Repository"), "Problem loading XSL file: @e", array('@e' => $e), NULL, WATCHDOG_ERROR);
+  }
+  $xsl = $proc->importStylesheet($xsl);
+  $newdom = $proc->transformToDoc($input);
+  $output = $newdom->saveHTML();
+  return $output;
+}
